@@ -20,13 +20,16 @@ namespace RestaurantMoodAnalyzeModel.ML
     internal class Trainer : ITrainer
     {
         private readonly IConfiguration _configuration;
-        private readonly MLContext _mlContext;
+        private readonly IBaseML _mlContext;
 
 
-        public Trainer(IConfiguration configuration)
+        public Trainer(
+            IConfiguration configuration,
+            IBaseML baseML
+            )
         {
             _configuration = configuration;
-
+            _mlContext = baseML;
         }
 
         //readonly string filepath = @"C:\Dev\H5\Machine-Learning\RestaurantMoodAnalyzeModel\Data\sampledata.csv";
@@ -39,6 +42,7 @@ namespace RestaurantMoodAnalyzeModel.ML
  
         public void Train()
         {
+            var mlContext = _mlContext.GetContext();
             string? filePath = _configuration["FilePaths:filePath"];
             string? modelPath = _configuration["FilePaths:modelPath"];
             if (!IsFileExists(filePath)) //TODO fix possible null
@@ -47,12 +51,12 @@ namespace RestaurantMoodAnalyzeModel.ML
                 return;
             }
 
-            IDataView trainingDataView = LoadData(_mlContext, filePath);
-            var dataSplit = SplitData(_mlContext, trainingDataView);
-            var dataProcessPipeline = BuildPipeline(_mlContext);
+            IDataView trainingDataView = LoadData(mlContext, filePath);
+            var dataSplit = SplitData(mlContext, trainingDataView);
+            var dataProcessPipeline = BuildPipeline(mlContext);
             var trainedModel = TrainModel(dataProcessPipeline, dataSplit.TrainSet);
-            SaveModel(_mlContext, trainedModel, dataSplit.TrainSet.Schema, modelPath);   //TODO fix possible null
-            EvaluateModel(_mlContext, trainedModel, dataSplit.TestSet);
+            SaveModel(mlContext, trainedModel, dataSplit.TrainSet.Schema, modelPath);   //TODO fix possible null
+            EvaluateModel(mlContext, trainedModel, dataSplit.TestSet);
         }
 
 

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RestaurantMoodAnalyzeModel.Interfaces;
+using RestaurantMoodAnalyzeModel.Managers;
 using RestaurantMoodAnalyzeModel.ML;
 using RestaurantMoodAnalyzeModel.ML.Base;
 
@@ -10,13 +11,13 @@ namespace RestaurantMoodAnalyzeModel
     class Program
     {
         public static IConfiguration? Configuration;
-        public static ITrainer _trainer;
+        public static IInputManager _inputManager;
 
-        public Program(ITrainer trainer)
+        public Program(IInputManager inputManager)
         {
-            _trainer = trainer;
+            _inputManager = inputManager;
         }
-        static void main(string[] args)
+        static void Main(string[] args)
         {
 
             var builder = new ConfigurationBuilder()
@@ -31,6 +32,7 @@ namespace RestaurantMoodAnalyzeModel
                 .AddTransient<ITrainer, Trainer>()
                 .AddTransient<IPredictor, Predictor>()
                 .AddSingleton<IBaseML,BaseML>()
+                .AddTransient<IInputManager, InputManager>()
                 .AddTransient<Program, Program>()
                 .BuildServiceProvider();
 
@@ -40,7 +42,7 @@ namespace RestaurantMoodAnalyzeModel
         }
         public void Run()
         {
-            _trainer.Train();
+            _inputManager.Run();
         }
 
     }

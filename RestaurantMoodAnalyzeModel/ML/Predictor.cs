@@ -3,47 +3,69 @@ using Microsoft.ML;
 using RestaurantMoodAnalyzeModel.Interfaces;
 using RestaurantMoodAnalyzeModel.ML.Objects;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace RestaurantMoodAnalyzeModel.ML
 {
+    /// <summary>
+    /// This
+    /// </summary>
     internal class Predictor : IPredictor
     {
-
-        private readonly MLContext _mlContext;
-
         private readonly IConfiguration _configuration;
+        private readonly IBaseML _mlContext;
 
-        public Predictor(IConfiguration configuration)
+        public Predictor(
+            IConfiguration configuration,
+            IBaseML mlContext
+            )
         {
             _configuration = configuration;
-
+            _mlContext = mlContext;
         }
 
         public void Predict(string inputData)
         {
-            string? modelPath = _configuration["FilePaths:modelPath"];
-            if (!File.Exists(modelPath))
+            var mlContext = _mlContext.GetContext();
+            string? modelPath = GetModelPath();
+            if (modelPath == null)
             {
-                Console.WriteLine($"\"Failed to find model at {modelPath}");
+                Console.WriteLine("Model path is not configured");
                 return;
             }
 
-
-            ITransformer mlModel;
-            using (var stream = new FileStream(modelPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                mlModel = _mlContext.Model.Load(stream, out _);
-            }
+            ITransformer mlModel = LoadModel(mlContext, modelPath);
             if (mlModel == null)
             {
-                Console.WriteLine("Failed to load model"); return;
+                Console.WriteLine("Failed to load model");
+                return;
             }
 
-            var predictionEngine = _mlContext.Model.CreatePredictionEngine<RestaurantFeedback, RestaurantPrediction>(mlModel);
+            MakePrediction(mlContext, mlModel, inputData);
+        }
+
+        private string? GetModelPath()
+        {
+            return _configuration["FilePaths:modelPath"];
+        }
+
+        private ITransformer LoadModel(MLContext mlContext, string modelPath)
+        {
+            if (!File.Exists(modelPath))
+            {
+                Console.WriteLine($"Failed to find model at {modelPath}");
+                return null;
+            }
+
+            using (var stream = new FileStream(modelPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return mlContext.Model.Load(stream, out _);
+            }
+        }
+
+        private void MakePrediction(MLContext mlContext, ITransformer mlModel, string inputData)
+        {
+            var predictionEngine = mlContext.Model.CreatePredictionEngine<RestaurantFeedback, RestaurantPrediction>(mlModel);
 
             var prediction = predictionEngine.Predict(new RestaurantFeedback { Text = inputData });
 
