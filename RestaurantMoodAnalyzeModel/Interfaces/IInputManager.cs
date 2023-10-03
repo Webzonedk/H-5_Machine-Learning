@@ -2,6 +2,6 @@
 {
     internal interface IInputManager
     {
-        void Run();
+        public void Run();
     }
 }

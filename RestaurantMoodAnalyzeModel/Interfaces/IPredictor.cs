@@ -2,6 +2,6 @@
 {
     internal interface IPredictor
     {
-        void Predict(string inputData);
+       public void Predict(string inputData);
     }
 }

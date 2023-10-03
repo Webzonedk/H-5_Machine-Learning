@@ -4,6 +4,6 @@ namespace RestaurantMoodAnalyzeModel.Interfaces
 {
     internal interface IBaseML
     {
-        MLContext GetContext();
+        public MLContext GetContext();
     }
 }
