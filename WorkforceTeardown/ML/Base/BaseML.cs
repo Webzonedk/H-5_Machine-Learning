@@ -15,7 +15,7 @@ namespace WorkforceTeardown.Interfaces.Base
 
         public BaseML(IConfiguration configuration)
         {
-            MlContext = new MLContext(2020);
+            MlContext = new MLContext();
         }
         public MLContext GetContext()
         {

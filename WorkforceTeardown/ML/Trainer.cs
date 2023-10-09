@@ -39,20 +39,25 @@ namespace WorkforceTeardown.Interfaces
         public void Train()
         {
             var mlContext = _mlContext.GetContext();
-            //string? filePath = _configuration["FilePaths:filePath"];
             string? modelPath = _configuration["FilePaths:modelPath"];
             string? trainingPath = _configuration["FilePaths:TrainingFilePath"];
-            if (!IsFileExists(trainingPath)) //TODO fix possible null
+            if (!IsFileExists(trainingPath!)) 
             {
                 Console.WriteLine($"File {trainingPath} not found");
                 return;
             }
 
-            IDataView trainingDataView = LoadData(mlContext, trainingPath);
+            //if (!IsFileExists(modelPath!))
+            //{
+            //    Console.WriteLine($"File {modelPath} not found");
+            //    return;
+            //}
+
+            IDataView trainingDataView = LoadData(mlContext, trainingPath!);
             var dataSplit = SplitData(mlContext, trainingDataView);
             var dataProcessPipeline = BuildPipeline(mlContext);
             var trainedModel = TrainModel(dataProcessPipeline, dataSplit.TrainSet);
-            SaveModel(mlContext, trainedModel, dataSplit.TrainSet.Schema, modelPath);   //TODO fix possible null
+            SaveModel(mlContext, trainedModel, dataSplit.TrainSet.Schema, modelPath!);
             EvaluateModel(mlContext, trainedModel, dataSplit.TestSet);
         }
 
@@ -76,10 +81,11 @@ namespace WorkforceTeardown.Interfaces
         /// <param name="mLContext"></param>
         /// <param name="filepath"></param>
         /// <returns>Returns the data</returns>
-        private IDataView LoadData(MLContext mLContext, string filePath)
+        private IDataView LoadData(MLContext mLContext, string trainingPath)
         {
-            var data = mLContext.Data.LoadFromTextFile<EmploymentHistory>(filePath, hasHeader: false, separatorChar: ',');
-            Console.WriteLine($"Loaded {data.GetRowCount()} records from {filePath}");
+            var data = mLContext.Data.LoadFromTextFile<EmploymentHistory>(trainingPath, separatorChar: ',');
+            Console.WriteLine($"Loaded {data.GetRowCount()} records from {trainingPath}");
+            //PreviewData(mLContext, data); //Previewing the data in the sample data for training.
             return data;
         }
 
@@ -148,6 +154,7 @@ namespace WorkforceTeardown.Interfaces
         /// <param name="modelPath"></param>
         private void SaveModel(MLContext mLContext, ITransformer model, DataViewSchema schema, string modelPath)
         {
+
             mLContext.Model.Save(model, schema, modelPath);
         }
 
@@ -182,5 +189,23 @@ namespace WorkforceTeardown.Interfaces
             $"RSquared: {modelMetrics.RSquared:0.##}{Environment.NewLine}" +
             $"Root Mean Squared Error: {modelMetrics.RootMeanSquaredError:#.##}");
         }
+
+
+        private void PreviewData(MLContext mlContext, IDataView dataView)
+        {
+            // show data in IDataView
+            var preview = dataView.Preview();
+
+            // Print to console
+            Console.WriteLine(string.Join("\t", preview.Schema.Select(c => c.Name)));
+
+            // print each row
+            foreach (var row in preview.RowView)
+            {
+                var values = row.Values.Select(v => v.Value.ToString());
+                Console.WriteLine(string.Join("\t", values));
+            }
+        }
+
     }
 }
